@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" data-theme="system" data-accent="blue">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f8fc" />
+    <title>LightWeightRAG — Research workspace</title>
+    <script>
+      try {
+        const theme = localStorage.getItem("lwrag-theme");
+        const accent = localStorage.getItem("lwrag-accent");
+        document.documentElement.dataset.theme = ["light", "dark", "system"].includes(theme) ? theme : "system";
+        document.documentElement.dataset.accent = ["blue", "teal", "green", "indigo", "amber"].includes(accent) ? accent : "blue";
+      } catch (_) {}
+    </script>
+    <link rel="stylesheet" href="/static/app.css?v=20261018-setup" />
+    <script src="/static/app.js?v=20261018-setup" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="LightWeightRAG home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 3.75h10.25L19 7.5v12.75a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-15.5a1 1 0 0 1 1-1Zm9.5 1.5V8h2.75L14.5 5.25ZM7 11h10v1.5H7V11Zm0 3.5h10V16H7v-1.5Zm0 3.5h6v1.5H7V18Z"/></svg>
+          </span>
+          <span class="brand-name">LightWeight<span>RAG</span></span>
+        </a>
+        <div class="topbar-divider" aria-hidden="true"></div>
+        <div class="workspace-name"><span class="workspace-kicker">WORKSPACE</span><span>Research library</span></div>
+        <div class="topbar-spacer"></div>
+        <div class="local-indicator"><span class="status-dot" aria-hidden="true"></span><span>Local workspace</span></div>
+        <div class="appearance-controls">
+          <div class="accent-picker">
+            <button class="accent-trigger" type="button" id="accent-trigger" aria-label="Accent color: Blue" title="Choose accent color" aria-haspopup="dialog" aria-expanded="false" aria-controls="accent-popover">
+              <img src="/static/icons/palette_24px.svg" alt="" />
+              <span class="accent-swatch" id="accent-swatch" aria-hidden="true"></span>
+            </button>
+            <div class="accent-popover" id="accent-popover" role="dialog" aria-label="Accent color" hidden>
+              <fieldset class="accent-options">
+                <legend>Accent color</legend>
+                <label class="accent-choice"><input type="radio" name="accent-color" value="blue" /><span class="choice-swatch swatch-blue" aria-hidden="true"></span><span>Blue</span></label>
+                <label class="accent-choice"><input type="radio" name="accent-color" value="teal" /><span class="choice-swatch swatch-teal" aria-hidden="true"></span><span>Teal</span></label>
+                <label class="accent-choice"><input type="radio" name="accent-color" value="green" /><span class="choice-swatch swatch-green" aria-hidden="true"></span><span>Green</span></label>
+                <label class="accent-choice"><input type="radio" name="accent-color" value="indigo" /><span class="choice-swatch swatch-indigo" aria-hidden="true"></span><span>Indigo</span></label>
+                <label class="accent-choice"><input type="radio" name="accent-color" value="amber" /><span class="choice-swatch swatch-amber" aria-hidden="true"></span><span>Amber</span></label>
+              </fieldset>
+            </div>
+          </div>
+          <div class="theme-switch" id="theme-switch" role="radiogroup" aria-label="Color theme">
+            <button class="theme-option" type="button" role="radio" data-theme-option="light" aria-label="Light theme" title="Light" aria-checked="false" tabindex="-1"><img src="/static/icons/light_mode_24px.svg" alt="" /></button>
+            <button class="theme-option" type="button" role="radio" data-theme-option="dark" aria-label="Dark theme" title="Dark" aria-checked="false" tabindex="-1"><img src="/static/icons/dark_mode_24px.svg" alt="" /></button>
+            <button class="theme-option" type="button" role="radio" data-theme-option="system" aria-label="System theme" title="System" aria-checked="false" tabindex="0"><img src="/static/icons/computer_24px.svg" alt="" /></button>
+          </div>
+        </div>
+        <button class="icon-button top-settings" type="button" id="open-settings" aria-label="Open model settings" title="Model settings">
+          <img src="/static/icons/settings_24px.svg" alt="" />
+        </button>
+      </header>
+
+      <div class="workspace" id="top">
+        <aside class="library-panel" aria-labelledby="library-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">YOUR KNOWLEDGE BASE</p>
+              <h2 id="library-title">Library</h2>
+            </div>
+            <span class="count-badge" id="document-count">0</span>
+          </div>
+
+          <div class="library-summary">
+            <span class="summary-icon" aria-hidden="true"><img src="/static/icons/menu_book_24px.svg" alt="" /></span>
+            <div><strong id="library-summary-title">A private research space</strong><p>Sources stay on this computer</p></div>
+          </div>
+
+          <label class="dropzone" id="dropzone" for="file-input" tabindex="0">
+            <input id="file-input" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple />
+            <span class="upload-icon" aria-hidden="true"><img src="/static/icons/upload_file_24px.svg" alt="" /></span>
+            <strong>Add research documents</strong>
+            <span>Drop files here or <span class="text-link">browse</span></span>
+            <small>PDF and Word · DOCX · up to 100 MB each</small>
+          </label>
+
+          <div class="library-list-heading"><h3>Documents</h3><span id="index-status" class="index-status">Not indexed</span></div>
+          <div class="document-list" id="document-list" aria-live="polite">
+            <div class="library-empty" id="library-empty">
+              <span class="empty-icon" aria-hidden="true"><img src="/static/icons/description_24px.svg" alt="" /></span>
+              <span>Your library is empty</span>
+              <small>Add a PDF or DOCX to begin</small>
+            </div>
+          </div>
+
+          <div class="panel-bottom">
+            <div class="index-summary"><span class="index-check" aria-hidden="true"><img src="/static/icons/check_circle_24px.svg" alt="" /></span><span id="passage-count">No passages indexed</span></div>
+            <button class="button button-filled index-button" id="index-button" type="button" disabled>
+              <img src="/static/icons/auto_awesome_24px.svg" alt="" />
+              <span>Index library</span>
+            </button>
+            <p class="local-note">Indexed locally with your selected embedding model.</p>
+          </div>
+        </aside>
+
+        <main class="main-panel" id="main-content">
+          <div class="main-inner">
+            <section class="welcome" id="welcome">
+              <div class="welcome-mark" aria-hidden="true">
+                <div class="welcome-orbit orbit-one"></div><div class="welcome-orbit orbit-two"></div>
+                <img src="/static/icons/menu_book_24px.svg" alt="" />
+              </div>
+              <p class="eyebrow welcome-eyebrow">LOCAL RESEARCH ASSISTANT</p>
+              <h1>Research with your<br /><span>own sources.</span></h1>
+              <p class="welcome-copy">Bring your books and papers together. Ask thoughtful questions and follow every answer back to the passage it came from.</p>
+              <div class="suggestion-label">Try asking</div>
+              <div class="suggestion-grid">
+                <button class="suggestion-card" data-prompt="Summarize the central argument in my library."><span class="suggestion-symbol"><img src="/static/icons/subject_24px.svg" alt="" /></span><span><strong>Find the main ideas</strong><small>Summarize key arguments</small></span><img class="suggestion-arrow" src="/static/icons/arrow_forward_24px.svg" alt="" /></button>
+                <button class="suggestion-card" data-prompt="Compare the research methods used by the authors in my library."><span class="suggestion-symbol"><img src="/static/icons/compare_arrows_24px.svg" alt="" /></span><span><strong>Compare approaches</strong><small>Connect ideas across sources</small></span><img class="suggestion-arrow" src="/static/icons/arrow_forward_24px.svg" alt="" /></button>
+                <button class="suggestion-card" data-prompt="What evidence in my library supports the authors' main conclusions?"><span class="suggestion-symbol"><img src="/static/icons/troubleshoot_24px.svg" alt="" /></span><span><strong>Trace the evidence</strong><small>Inspect claims and support</small></span><img class="suggestion-arrow" src="/static/icons/arrow_forward_24px.svg" alt="" /></button>
+              </div>
+            </section>
+
+            <section class="answer-area" id="answer-area" hidden aria-live="polite">
+              <div class="answer-question"><span class="question-avatar">You</span><p id="question-echo"></p></div>
+              <article class="answer-card">
+                <div class="answer-heading"><span class="answer-avatar" aria-hidden="true"><img src="/static/icons/auto_awesome_24px.svg" alt="" /></span><div><strong>Research assistant</strong><small id="answer-subtitle">Grounded in your library</small></div><button class="text-button copy-button" id="copy-answer" type="button" title="Copy answer"><img src="/static/icons/content_copy_24px.svg" alt="" /><span>Copy</span></button></div>
+                <div class="answer-body" id="answer-body"></div>
+                <div class="sources-section" id="sources-section">
+                  <div class="sources-heading"><span class="sources-icon" aria-hidden="true"><img src="/static/icons/menu_book_24px.svg" alt="" /></span><strong>Sources</strong><span class="source-count" id="source-count">0 passages</span></div>
+                  <div class="source-list" id="source-list"></div>
+                </div>
+              </article>
+            </section>
+
+            <div class="query-dock">
+              <form id="question-form" class="query-form">
+                <label class="sr-only" for="question-input">Ask a question about your documents</label>
+                <textarea id="question-input" rows="1" placeholder="Ask a question about your sources…" autocomplete="off"></textarea>
+                <div class="query-tools"><span class="query-hint"><kbd>Enter</kbd> to ask <span class="hint-divider">·</span> <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span><button class="send-button" id="send-button" type="submit" aria-label="Ask question" title="Ask question" disabled><img src="/static/icons/arrow_upward_24px.svg" alt="" /></button></div>
+              </form>
+              <p class="disclaimer"><img src="/static/icons/info_24px.svg" alt="" /> AI answers can be incomplete. Check the cited passage before relying on a claim.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog" class="dialog-header"><div><p class="eyebrow">CONNECTION</p><h2 id="settings-title">Model settings</h2></div><button class="icon-button" aria-label="Close settings"><img src="/static/icons/close_24px.svg" alt="" /></button></form>
+      <div class="dialog-body">
+        <p class="dialog-intro">Choose the local Ollama models used for answers and document search.</p>
+        <section class="model-setup" aria-labelledby="model-setup-title">
+          <div class="setup-heading">
+            <p class="eyebrow">LOCAL MODEL SETUP</p>
+            <h3 id="model-setup-title">Find a model for this computer</h3>
+            <p>We check this computer’s memory and free storage on your device. Choose a model, review its size, then start the download.</p>
+          </div>
+          <div class="system-summary" id="system-summary" role="status" aria-live="polite">Checking this computer…</div>
+          <button class="button button-text setup-refresh" id="refresh-system" type="button">Refresh system check</button>
+          <div class="setup-warning" id="setup-warning" role="status" aria-live="polite" hidden></div>
+          <label class="field-label" for="setup-model">Answer model</label>
+          <select class="text-field" id="setup-model" disabled aria-describedby="setup-estimate"></select>
+          <div class="setup-estimate" id="setup-estimate" aria-live="polite">Checking model sizes and available storage…</div>
+          <label class="setup-consent" for="setup-consent"><input id="setup-consent" type="checkbox" disabled /><span id="setup-consent-copy">I reviewed the download size and want to install these models locally.</span></label>
+          <button class="button button-filled setup-button" id="setup-button" type="button" disabled>
+            <img src="/static/icons/download_24px.svg" alt="" />
+            <span>Download and set up</span>
+          </button>
+          <div class="setup-progress" id="setup-progress" hidden role="status" aria-live="polite">
+            <div class="setup-progress-heading"><span id="setup-progress-label">Preparing local models…</span><strong id="setup-progress-percent">0%</strong></div>
+            <progress id="setup-progress-bar" max="100" value="0">0%</progress>
+            <p id="setup-progress-detail"></p>
+          </div>
+          <div class="ollama-help" id="ollama-help" hidden>
+            <p id="ollama-help-copy">Install Ollama from its official download page, open it once, then refresh this check.</p>
+            <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="setup-footnote">LightWeightRAG uses a cross-platform setup helper and Ollama’s local model service. Model files and the app stay on this computer. Your document library uses additional space as you add files.</p>
+        </section>
+        <label class="field-label" for="ollama-url">Ollama address</label><input class="text-field" id="ollama-url" type="url" value="http://localhost:11434" autocomplete="url" />
+        <p class="field-help">Usually <code>http://localhost:11434</code>. Documents and prompts are sent to this address.</p>
+        <label class="field-label" for="chat-model">Answer model</label><input class="text-field" id="chat-model" type="text" value="qwen2.5:7b" autocomplete="off" />
+        <p class="field-help">A local chat model that writes answers from retrieved passages.</p>
+        <label class="field-label" for="embedding-model">Embedding model</label><input class="text-field" id="embedding-model" type="text" value="nomic-embed-text" autocomplete="off" />
+        <p class="field-help">Changing this model requires re-indexing your library.</p>
+      </div>
+      <div class="dialog-actions"><button class="button button-text" id="cancel-settings" type="button">Cancel</button><button class="button button-filled" id="save-settings" type="button">Save settings</button></div>
+    </dialog>
+    <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
+  </body>
+</html>
