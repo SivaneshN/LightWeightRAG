@@ -44,7 +44,9 @@ def main() -> int:
             f"{ROOT / 'web'}{os.pathsep}web",
             str(ENTRYPOINT),
         ]
-        subprocess.run(command, cwd=ROOT, check=True)
+        environment = os.environ.copy()
+        environment["PYINSTALLER_CONFIG_DIR"] = str(temp_path / "pyinstaller-config")
+        subprocess.run(command, cwd=ROOT, check=True, env=environment)
 
         executable_name = APP_NAME + (".exe" if os.name == "nt" else "")
         built_executable = temp_path / "dist" / executable_name

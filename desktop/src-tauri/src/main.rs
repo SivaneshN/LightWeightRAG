@@ -229,16 +229,15 @@ fn main() {
             if matches!(event, WindowEvent::CloseRequested { .. }) {
                 let process = window.state::<BackendProcess>();
                 process.closing.store(true, Ordering::SeqCst);
-                if let Ok(mut slot) = process.child.lock() {
-                    if let Some(mut child) = slot.take() {
-                        let token = process
-                            .token
-                            .lock()
-                            .ok()
-                            .and_then(|slot| slot.clone())
-                            .unwrap_or_default();
-                        stop_backend(&mut child, &token);
-                    }
+                let child = process.child.lock().ok().and_then(|mut slot| slot.take());
+                if let Some(mut child) = child {
+                    let token = process
+                        .token
+                        .lock()
+                        .ok()
+                        .and_then(|slot| slot.clone())
+                        .unwrap_or_default();
+                    stop_backend(&mut child, &token);
                 }
             }
         })

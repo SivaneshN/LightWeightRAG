@@ -36,14 +36,16 @@ cargo install tauri-cli --locked --version '^2.0.0'
 cargo tauri icon desktop-ui/app-icon.png --output desktop/src-tauri/icons
 ```
 
-Build from the Tauri project directory, selecting its native installer format:
+Build the Mac app bundle, then create a drag-and-drop disk image. The helper uses `hdiutil` directly and does not need Finder automation permission:
 
 ```sh
 cd desktop/src-tauri
-cargo tauri build --bundles dmg --no-sign
+cargo tauri build --bundles app --no-sign
+cd ../..
+bash packaging/build_macos_dmg.sh
 ```
 
-On Ubuntu/Debian, use `--bundles deb`; on Windows, use `--bundles nsis`. Build outputs are placed under `desktop/src-tauri/target/release/bundle/`.
+On Ubuntu/Debian, build from `desktop/src-tauri` with `cargo tauri build --bundles deb --no-sign`; on Windows, use `cargo tauri build --bundles nsis --no-sign`. Build outputs are placed under `desktop/src-tauri/target/release/bundle/`.
 
 ### Windows PowerShell
 

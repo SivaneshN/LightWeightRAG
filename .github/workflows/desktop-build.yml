@@ -24,10 +24,10 @@ jobs:
             bundle: nsis
             artifact: windows-x64
           - os: macos-latest
-            bundle: dmg
+            bundle: app
             artifact: macos-arm64
           - os: macos-15-intel
-            bundle: dmg
+            bundle: app
             artifact: macos-x64
     steps:
       - uses: actions/checkout@v7
@@ -71,10 +71,56 @@ jobs:
         working-directory: desktop/src-tauri
         run: cargo tauri build --bundles "${{ matrix.bundle }}" --no-sign --ci
 
-      - name: Save installer artifacts for review
+      - name: Create macOS drag-and-drop disk image
+        if: matrix.bundle == 'app'
+        run: bash packaging/build_macos_dmg.sh "${{ matrix.artifact }}"
+
+      - name: Install and launch the Windows preview
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem "desktop/src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
+          if (-not $installer) { throw "The Windows installer was not created." }
+          $installDir = Join-Path $env:RUNNER_TEMP "lwrag-smoke-install"
+          Start-Process -FilePath $installer.FullName -ArgumentList @("/S", "/D=$installDir") -Wait
+          $appPath = Join-Path $installDir "LightWeightRAG.exe"
+          if (-not (Test-Path $appPath)) { throw "The installed desktop app was not found." }
+
+          $app = Start-Process -FilePath $appPath -PassThru
+          $ready = $false
+          $deadline = (Get-Date).AddSeconds(60)
+          try {
+            while ((Get-Date) -lt $deadline) {
+              try {
+                $response = Invoke-WebRequest -Uri "http://127.0.0.1:38571/" -TimeoutSec 3
+                if ($response.StatusCode -eq 200 -and $response.Content -match "LightWeightRAG") {
+                  $ready = $true
+                  break
+                }
+              } catch {
+                Start-Sleep -Seconds 1
+              }
+            }
+            if (-not $ready) { throw "The installed app did not start its local research service." }
+          } finally {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+            Get-Process -Name "LightWeightRAG-backend" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Save Windows and Linux installers
+        if: matrix.bundle != 'app'
         uses: actions/upload-artifact@v7
         with:
           name: LightWeightRAG-${{ matrix.artifact }}
           path: desktop/src-tauri/target/release/bundle/**
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Save macOS disk image
+        if: matrix.bundle == 'app'
+        uses: actions/upload-artifact@v7
+        with:
+          name: LightWeightRAG-${{ matrix.artifact }}
+          path: desktop/src-tauri/target/release/bundle/dmg/LightWeightRAG-${{ matrix.artifact }}.dmg
           if-no-files-found: error
           retention-days: 14
