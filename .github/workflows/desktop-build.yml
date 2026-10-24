@@ -25,23 +25,9 @@ jobs:
   build:
     name: Build ${{ matrix.artifact }}
     runs-on: ${{ matrix.os }}
-    if: github.event_name != 'workflow_dispatch' || inputs.platform == 'all' || inputs.platform == matrix.artifact
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            bundle: deb
-            artifact: linux-ubuntu-x64
-          - os: windows-latest
-            bundle: nsis
-            artifact: windows-x64
-          - os: macos-latest
-            bundle: app
-            artifact: macos-arm64
-          - os: macos-15-intel
-            bundle: app
-            artifact: macos-x64
+      matrix: ${{ fromJSON(inputs.platform == 'windows-x64' && '{"include":[{"os":"windows-latest","bundle":"nsis","artifact":"windows-x64"}]}' || inputs.platform == 'linux-ubuntu-x64' && '{"include":[{"os":"ubuntu-24.04","bundle":"deb","artifact":"linux-ubuntu-x64"}]}' || inputs.platform == 'macos-arm64' && '{"include":[{"os":"macos-latest","bundle":"app","artifact":"macos-arm64"}]}' || inputs.platform == 'macos-x64' && '{"include":[{"os":"macos-15-intel","bundle":"app","artifact":"macos-x64"}]}' || '{"include":[{"os":"ubuntu-24.04","bundle":"deb","artifact":"linux-ubuntu-x64"},{"os":"windows-latest","bundle":"nsis","artifact":"windows-x64"},{"os":"macos-latest","bundle":"app","artifact":"macos-arm64"},{"os":"macos-15-intel","bundle":"app","artifact":"macos-x64"}]}') }}
     steps:
       - uses: actions/checkout@v7
 
