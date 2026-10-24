@@ -5,6 +5,8 @@ const projectPreferencesKey = "lwrag-project-preferences";
 const projectViewKey = "lwrag-project-view";
 const multilingualEmbeddingModel = "nomic-embed-text-v2-moe";
 const maxDocumentBytes = 100 * 1024 * 1024;
+const desktopApiToken = new URLSearchParams(window.location.search).get("desktop_token") || "";
+if (desktopApiToken) window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
 let libraryState = { documents: [], indexed_count: 0, indexed: false };
 let projectsState = [];
 let activeProjectId = null;
@@ -166,7 +168,9 @@ function toast(message, kind = "") {
 }
 
 async function api(path, options = {}) {
-  const response = await fetch(path, options);
+  const headers = new Headers(options.headers || {});
+  if (desktopApiToken) headers.set("X-LightWeightRAG-Desktop-Token", desktopApiToken);
+  const response = await fetch(path, { ...options, headers });
   let data;
   try { data = await response.json(); } catch (_) { data = {}; }
   if (!response.ok) {

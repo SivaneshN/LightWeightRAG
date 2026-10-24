@@ -7,3 +7,6 @@ data/
 .env
 .env.*
 !.env.example
+desktop/src-tauri/target/
+desktop/src-tauri/resources/backend/
+desktop/src-tauri/icons/

@@ -9,7 +9,7 @@ A local-first research assistant for asking questions about your own PDF and Wor
 - Choose which existing projects' documents a new project can use as additional research sources; each project keeps its own documents and index.
 - Search the local collection and see the passages selected for an answer.
 - Ask a local Ollama chat model to answer from those passages, with source citations.
-- Keep uploaded documents and the index in this project’s `data/` directory.
+- Keep uploaded documents and indexes on this computer; source-checkout data uses `data/`, while the desktop app uses an operating-system per-user data folder.
 - Choose Light, Dark, or System appearance and configure the Ollama URL and model names in the interface.
 - Check local CPU, memory, GPU, and model-folder storage before selecting an answer model.
 - Review model and app storage estimates, choose the model-file folder, download compatible multilingual Ollama models, and see live progress and completion notices.
@@ -20,7 +20,7 @@ Scanned PDFs, precise Word page-number citations, complex table/equation extract
 
 ## Requirements
 
-- Python 3.10 or newer.
+- Python 3.10 or newer when running from a source checkout. Desktop installers bundle the Python service.
 - An internet connection for the first-time Ollama and model download. LightWeightRAG installs Ollama automatically after you review and confirm the storage estimate.
 
 You do not need to install Ollama yourself or use a terminal to download models. Open **Model settings**, choose the recommended answer model and the folder for model files, review the Ollama installer and model download/storage estimates, check the confirmation box, then select **Install Ollama and download models**. LightWeightRAG downloads Ollama from its official distribution, installs it for your account, starts its local service, downloads the multilingual Qwen3 answer model and `nomic-embed-text-v2-moe` retrieval model, shows progress, and selects both when setup completes. Windows uses Ollama’s signed per-user installer; macOS and Linux use the official runtime in your user account, without changing system-wide packages.
@@ -32,6 +32,16 @@ In **Model settings**, use **Browse** to choose a folder before downloading. You
 For a terminal-based setup helper, run `python setup_local_llm.py`. It uses the same memory and storage checks and asks before it downloads anything. The one-click Ollama installer is available in the app’s **Model settings**.
 
 ## Install and run
+
+### Desktop app for non-technical users
+
+The desktop packaging project is in `desktop/`; it wraps the existing web interface, bundles the Python service, stores research data in the operating system's per-user app data folder, and starts the service only on this computer. The multi-OS workflow is `.github/workflows/desktop-build.yml`.
+
+The workflow builds preview installers when manually started in GitHub Actions or when a `v*` tag is pushed: a Windows x64 `.exe`, macOS `.dmg` files for Apple Silicon and Intel, and an Ubuntu/Debian x64 `.deb`. These preview builds are **unsigned** and are saved as workflow artifacts; they are not yet published as a public release. Do not distribute these previews to non-technical users as finished installers. Public macOS distribution still needs Developer ID signing and Apple notarization; Windows distribution needs a signing or Store plan. The Linux installer currently targets Ubuntu and Debian.
+
+The installer does not contain Ollama or language models. On first use, LightWeightRAG checks the computer, explains storage needs, and offers to install Ollama and download the selected models. Projects, documents, indexes, and model preferences are kept in the user's app data folder and are not included in installer upgrades.
+
+### Run from a source checkout
 
 Open a terminal in the `LightWeightRAG` folder. The commands below keep Python packages inside a virtual environment.
 
@@ -66,7 +76,7 @@ The server prints a local URL (usually `http://127.0.0.1:8501`). Open it in your
 3. Select a project to open its research workspace, then upload PDF or `.docx` source files. You can also provide optional research instructions when creating the project. Each project keeps its own files and index.
 4. Select **Index project sources**. This indexes documents in the open project and any projects it includes. The progress panel shows extraction, passage embedding, and saving. It reports the current PDF page or Word paragraph/table row while reading, then the number of passages processed. The remaining-time estimate starts after the first embedding batch and updates using recent model speed; first-time model loading and different computers can make it vary. A small library may finish before there is enough work for a useful estimate.
 5. Ask a question in the research panel. Project instructions for the open project and its included sources guide the answer. Citations such as `[1]` identify the project, passage, and page/paragraph/table-row location.
-6. Re-index the project's sources after adding documents to the open or included projects, or after changing the embedding model. The app disables questions until required indexes are ready or marks sources for re-indexing if saved vectors do not match the selected search model. Existing local data can be removed by deleting `data/` while the app is stopped.
+6. Re-index the project's sources after adding documents to the open or included projects, or after changing the embedding model. The app disables questions until required indexes are ready or marks sources for re-indexing if saved vectors do not match the selected search model. For a source checkout, local data can be removed by deleting `data/` while the app is stopped. For a desktop install, back up or remove the app's folder from the operating system's per-user app data location.
 
 The first version works best with PDFs that contain selectable text. If a PDF is a scan, the app will report that it could not extract text; OCR support is planned. Word `.doc` files are not supported yet; save them as `.docx` first. A file over 100 MB is skipped with an on-screen warning; reduce or split it before uploading.
 
@@ -81,12 +91,16 @@ PDF extraction and semantic search can miss or misread material. Always check th
 - `webapp.py` — local FastAPI server and document/answer API.
 - `lightweightrag/model_setup.py` — hardware, storage, model fit, and download-progress helpers.
 - `setup_local_llm.py` — cross-platform fallback setup script.
+- `desktop/` — Tauri desktop shell that starts and closes the packaged local Python service.
+- `desktop-ui/` — theme-aware startup screen and app icon displayed while the local service starts.
+- `desktop_backend.py` and `packaging/build_backend.py` — Python service entry point and per-platform PyInstaller packaging step.
+- `.github/workflows/desktop-build.yml` — unsigned Windows, macOS, and Linux preview build workflow.
 - `web/` — responsive Material 3-inspired browser interface and locally bundled Material Symbols.
 - `lightweightrag/` — document extraction, chunking, local index, and Ollama client.
-- `data/documents/` — uploaded source documents (created at runtime; ignored by Git).
-- `data/index.json` — extracted chunks and embeddings (created at runtime; ignored by Git).
-- `data/projects.json` — local project names, instructions, and IDs (created at runtime; ignored by Git).
-- `data/projects/<project-id>/documents/` and `data/projects/<project-id>/index.json` — each project’s private local documents and independent index (created at runtime; ignored by Git).
+- `data/documents/` — source-checkout uploads (created at runtime; ignored by Git). Packaged installs keep uploads in the user's app data folder.
+- `data/index.json` — source-checkout extracted chunks and embeddings (created at runtime; ignored by Git).
+- `data/projects.json` — source-checkout project names, instructions, and IDs (created at runtime; ignored by Git).
+- `data/projects/<project-id>/documents/` and `data/projects/<project-id>/index.json` — source-checkout project files and indexes (created at runtime; ignored by Git).
 - The legacy **General** project continues using `data/documents/` and `data/index.json`; existing topic folders are carried forward into the Projects list.
 
 ## Interface design

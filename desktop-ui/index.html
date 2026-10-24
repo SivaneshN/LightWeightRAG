@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7fc" />
+    <title>LightWeightRAG</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+        background: #f5f7fc;
+        color: #191c20;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { background: #111418; color: #e2e2e6; }
+        .surface { background: #1b1f24; border-color: #414750; }
+        .mark { background: #354d72; color: #d8e2ff; }
+        .muted { color: #c2c6d0; }
+      }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; }
+      .surface { width: min(100%, 480px); padding: 36px; border: 1px solid #d8dce5; border-radius: 28px; background: #fff; text-align: center; }
+      .mark { width: 56px; height: 56px; display: grid; place-items: center; margin: 0 auto 20px; border-radius: 18px; background: #dce7ff; color: #315d91; font-size: 25px; font-weight: 700; }
+      h1 { margin: 0; font-size: clamp(22px, 4vw, 28px); letter-spacing: -.035em; }
+      .muted { margin: 10px 0 0; color: #5c606a; line-height: 1.55; }
+      .spinner { width: 26px; height: 26px; margin: 26px auto 0; border: 3px solid #dbe3f2; border-top-color: #315d91; border-radius: 50%; animation: spin .9s linear infinite; }
+      .help { margin-top: 22px; font-size: 13px; }
+      [hidden] { display: none !important; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <main class="surface" aria-live="polite">
+      <div class="mark" aria-hidden="true">L</div>
+      <h1 data-startup-title>Opening your research workspace</h1>
+      <p class="muted" data-startup-message>Starting the private service on this computer. This can take a few seconds.</p>
+      <div class="spinner" data-startup-spinner role="progressbar" aria-label="Starting LightWeightRAG"></div>
+      <p class="muted help" data-startup-help hidden>Try closing and reopening the app. If the problem continues, contact the person who provided LightWeightRAG.</p>
+    </main>
+  </body>
+</html>

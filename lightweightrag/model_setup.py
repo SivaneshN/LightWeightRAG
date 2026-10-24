@@ -26,7 +26,8 @@ import requests
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODEL_DIRECTORY_CONFIG = ROOT / "data" / "ollama_model_directory.json"
+MODEL_DATA_DIR = Path(os.environ.get("LIGHTWEIGHTRAG_DATA_DIR", ROOT / "data")).expanduser()
+MODEL_DIRECTORY_CONFIG = MODEL_DATA_DIR / "ollama_model_directory.json"
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
 GIB = 1024**3
 GB = 1000**3

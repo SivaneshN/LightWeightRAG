@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import math
 import json
+import os
 import re
+import sys
 import threading
 import time
 import uuid
@@ -12,8 +14,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -22,8 +24,8 @@ from lightweightrag.model_setup import DEFAULT_OLLAMA_URL, choose_model_director
 from lightweightrag.ollama_client import OllamaError, chat, embed
 
 
-ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
+ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+DATA_DIR = Path(os.environ.get("LIGHTWEIGHTRAG_DATA_DIR", ROOT / "data")).expanduser()
 PROJECT_DIR = DATA_DIR / "projects"
 PROJECTS_PATH = DATA_DIR / "projects.json"
 LEGACY_TOPIC_DIR = DATA_DIR / "topics"
@@ -168,6 +170,16 @@ for stored_project in list_projects():
     project_documents_folder(stored_project["id"]).mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="LightWeightRAG", docs_url=None, redoc_url=None)
+DESKTOP_API_TOKEN = os.environ.get("LIGHTWEIGHTRAG_DESKTOP_TOKEN", "")
+
+
+@app.middleware("http")
+async def require_desktop_api_token(request, call_next):
+    """Keep the packaged loopback API private to its desktop webview."""
+    if DESKTOP_API_TOKEN and request.url.path.startswith("/api/"):
+        if request.headers.get("x-lightweightrag-desktop-token") != DESKTOP_API_TOKEN:
+            return JSONResponse(status_code=403, content={"detail": "This local app request is not authorized."})
+    return await call_next(request)
 
 
 class ModelSettings(BaseModel):
@@ -701,6 +713,17 @@ def ask_library(request: QuestionRequest):
             for index, item in enumerate(sources, start=1)
         ],
     }
+
+
+@app.post("/api/desktop/shutdown")
+def shutdown_desktop_service(request: Request):
+    if not DESKTOP_API_TOKEN:
+        raise HTTPException(status_code=404, detail="Not found.")
+    server = getattr(request.app.state, "uvicorn_server", None)
+    if server is None:
+        raise HTTPException(status_code=503, detail="The local service is not ready to stop.")
+    server.should_exit = True
+    return {"status": "stopping"}
 
 
 @app.get("/")
