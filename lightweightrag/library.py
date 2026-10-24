@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -20,38 +21,51 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-def extract_pdf(path: Path) -> list[dict[str, Any]]:
+def extract_pdf(path: Path, on_page: Callable[[int, int], None] | None = None) -> list[dict[str, Any]]:
     reader = PdfReader(str(path))
     pages = []
+    total_pages = len(reader.pages)
     for page_number, page in enumerate(reader.pages, start=1):
         text = clean_text(page.extract_text() or "")
         if text:
             pages.append({"location": f"PDF page {page_number}", "text": text})
+        if on_page:
+            on_page(page_number, total_pages)
     return pages
 
 
-def extract_docx(path: Path) -> list[dict[str, Any]]:
+def extract_docx(path: Path, on_unit: Callable[[int, int], None] | None = None) -> list[dict[str, Any]]:
     """Extract Word paragraphs and table rows with stable structural locators."""
     document = Document(str(path))
+    elements = list(document.iter_inner_content())
+    total_units = sum(len(element.rows) if hasattr(element, "rows") and hasattr(element, "columns") else 1 for element in elements)
     units: list[dict[str, Any]] = []
     paragraph_number = 0
     table_number = 0
-    for element in document.iter_inner_content():
+    completed_units = 0
+    for element in elements:
         if hasattr(element, "rows") and hasattr(element, "columns"):
             table_number += 1
             for row_number, row in enumerate(element.rows, start=1):
                 text = " | ".join(clean_text(cell.text) for cell in row.cells if clean_text(cell.text))
                 if text:
                     units.append({"location": f"Table {table_number}, row {row_number}", "text": text})
+                completed_units += 1
+                if on_unit:
+                    on_unit(completed_units, total_units)
         else:
             paragraph_number += 1
             text = clean_text(element.text)
             if text:
                 units.append({"location": f"Paragraph {paragraph_number}", "text": text})
+            completed_units += 1
+            if on_unit:
+                on_unit(completed_units, total_units)
     return units
 
 
-def chunk_units(pages: list[dict[str, Any]], source: str, size: int = 1300, overlap: int = 180) -> list[dict[str, Any]]:
+# Compact chunks stay within the multilingual embedder's 512-token input window.
+def chunk_units(pages: list[dict[str, Any]], source: str, size: int = 420, overlap: int = 80) -> list[dict[str, Any]]:
     chunks: list[dict[str, Any]] = []
     for item in pages:
         text = item["text"]

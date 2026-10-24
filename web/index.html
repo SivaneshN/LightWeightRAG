@@ -14,8 +14,8 @@
         document.documentElement.dataset.accent = ["blue", "teal", "green", "indigo", "amber"].includes(accent) ? accent : "blue";
       } catch (_) {}
     </script>
-    <link rel="stylesheet" href="/static/app.css?v=20261018-setup" />
-    <script src="/static/app.js?v=20261018-setup" defer></script>
+    <link rel="stylesheet" href="/static/app.css?v=20261024-project-layout-v1" />
+    <script src="/static/app.js?v=20261024-project-layout-v1" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -27,7 +27,7 @@
           <span class="brand-name">LightWeight<span>RAG</span></span>
         </a>
         <div class="topbar-divider" aria-hidden="true"></div>
-        <div class="workspace-name"><span class="workspace-kicker">WORKSPACE</span><span>Research library</span></div>
+        <div class="workspace-name"><span class="workspace-kicker">WORKSPACE</span><span id="workspace-name-value">Research projects</span></div>
         <div class="topbar-spacer"></div>
         <div class="local-indicator"><span class="status-dot" aria-hidden="true"></span><span>Local workspace</span></div>
         <div class="appearance-controls">
@@ -58,12 +58,16 @@
         </button>
       </header>
 
-      <div class="workspace" id="top">
+      <div class="workspace project-picker" id="top">
         <aside class="library-panel" aria-labelledby="library-title">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">YOUR KNOWLEDGE BASE</p>
-              <h2 id="library-title">Library</h2>
+              <div class="panel-title-row">
+                <button class="icon-button project-home-button" id="browse-projects-sidebar" type="button" aria-label="Go to projects home" title="Go to projects home" hidden>
+                  <img src="/static/icons/home_24px.svg" alt="" />
+                </button>
+                <h2 id="library-title"><button class="project-home-link" id="projects-home-link" type="button">Projects</button></h2>
+              </div>
             </div>
             <span class="count-badge" id="document-count">0</span>
           </div>
@@ -73,6 +77,24 @@
             <div><strong id="library-summary-title">A private research space</strong><p>Sources stay on this computer</p></div>
           </div>
 
+          <section class="projects-section" aria-labelledby="projects-title">
+            <div class="projects-heading">
+              <h3 id="projects-title">Projects</h3>
+              <button class="button button-outlined add-project-button" id="add-project" type="button"><img src="/static/icons/add_24px.svg" alt="" /><span>Add project</span></button>
+            </div>
+            <p class="projects-hint">Each project is one research topic. Select a project to open its workspace.</p>
+            <div class="project-list" id="project-list" role="group" aria-label="Research projects"><p class="project-list-loading">Loading projects…</p></div>
+          </section>
+
+          <details class="project-context" id="project-context">
+            <summary><span>Project instructions</span><small id="project-context-name">General</small></summary>
+            <p>Set the research focus or preferred answer style for this project.</p>
+            <label class="sr-only" for="project-instructions">Instructions for this research project</label>
+            <textarea class="text-field" id="project-instructions" rows="3" maxlength="5000" placeholder="For example: Focus on randomized controlled trials from 2015 onward."></textarea>
+            <button class="button button-outlined project-instructions-save" id="save-project-instructions" type="button">Save instructions</button>
+            <span class="project-instructions-status" id="project-instructions-status" role="status" aria-live="polite"></span>
+          </details>
+
           <label class="dropzone" id="dropzone" for="file-input" tabindex="0">
             <input id="file-input" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple />
             <span class="upload-icon" aria-hidden="true"><img src="/static/icons/upload_file_24px.svg" alt="" /></span>
@@ -80,29 +102,60 @@
             <span>Drop files here or <span class="text-link">browse</span></span>
             <small>PDF and Word · DOCX · up to 100 MB each</small>
           </label>
+          <p class="upload-limits" id="upload-limits">Each PDF or DOCX file can be up to 100 MB. There is no fixed limit on document count or PDF page count; larger libraries take longer to index and use more storage. Scanned PDFs need OCR, which is not included yet.</p>
+          <p class="upload-warning" id="upload-warning" role="alert" hidden></p>
 
-          <div class="library-list-heading"><h3>Documents</h3><span id="index-status" class="index-status">Not indexed</span></div>
+          <div class="library-list-heading"><h3 id="documents-title">Documents</h3><span id="index-status" class="index-status">Not indexed</span></div>
           <div class="document-list" id="document-list" aria-live="polite">
             <div class="library-empty" id="library-empty">
               <span class="empty-icon" aria-hidden="true"><img src="/static/icons/description_24px.svg" alt="" /></span>
-              <span>Your library is empty</span>
+              <span>This project has no files yet</span>
               <small>Add a PDF or DOCX to begin</small>
             </div>
           </div>
 
           <div class="panel-bottom">
             <div class="index-summary"><span class="index-check" aria-hidden="true"><img src="/static/icons/check_circle_24px.svg" alt="" /></span><span id="passage-count">No passages indexed</span></div>
+            <div class="index-progress" id="index-progress" hidden role="region" aria-label="Library indexing progress">
+              <div class="index-progress-heading"><span id="index-progress-label">Preparing your library</span><strong id="index-progress-percent">0%</strong></div>
+              <progress id="index-progress-bar" max="100" value="0" aria-label="Library indexing progress" aria-valuetext="0 percent">0%</progress>
+              <p id="index-progress-detail" role="status" aria-live="polite"></p>
+              <p class="index-progress-hint">Time varies with document length and computer speed. A remaining-time estimate appears after the app measures indexing speed.</p>
+              <ul id="index-progress-problems" hidden></ul>
+            </div>
             <button class="button button-filled index-button" id="index-button" type="button" disabled>
               <img src="/static/icons/auto_awesome_24px.svg" alt="" />
-              <span>Index library</span>
+              <span>Index project sources</span>
             </button>
-            <p class="local-note">Indexed locally with your selected embedding model.</p>
+            <p class="local-note">Questions use this project's documents and any project sources chosen when it was created.</p>
           </div>
         </aside>
 
         <main class="main-panel" id="main-content">
           <div class="main-inner">
-            <section class="welcome" id="welcome">
+            <header class="project-workspace-heading" id="project-workspace-heading" hidden>
+              <p class="eyebrow">RESEARCH PROJECT</p>
+              <h1 id="active-project-title"></h1>
+            </header>
+            <section class="project-home" id="project-home" aria-labelledby="project-home-title">
+              <div class="project-home-heading">
+                <div>
+                  <p class="eyebrow">YOUR RESEARCH</p>
+                  <h1 id="project-home-title">Research projects</h1>
+                  <p>Choose a project to open its documents and research workspace.</p>
+                </div>
+              <div class="project-home-actions">
+                <div class="project-view-toggle" role="group" aria-label="Project display view">
+                  <button class="project-view-button" id="project-view-grid" type="button" aria-label="Grid view" title="Grid view" aria-pressed="true"><img src="/static/icons/grid_view_24px.svg" alt="" /></button>
+                  <button class="project-view-button" id="project-view-list" type="button" aria-label="List view" title="List view" aria-pressed="false"><img src="/static/icons/view_list_24px.svg" alt="" /></button>
+                </div>
+                <button class="button button-filled project-home-add" id="project-home-add" type="button"><img src="/static/icons/add_24px.svg" alt="" /><span>Create project</span></button>
+              </div>
+              </div>
+              <div class="project-home-grid" id="project-home-grid" role="list" aria-label="Your research projects"></div>
+            </section>
+
+            <section class="welcome" id="welcome" hidden>
               <div class="welcome-mark" aria-hidden="true">
                 <div class="welcome-orbit orbit-one"></div><div class="welcome-orbit orbit-two"></div>
                 <img src="/static/icons/menu_book_24px.svg" alt="" />
@@ -130,7 +183,7 @@
               </article>
             </section>
 
-            <div class="query-dock">
+            <div class="query-dock" id="query-dock" hidden>
               <form id="question-form" class="query-form">
                 <label class="sr-only" for="question-input">Ask a question about your documents</label>
                 <textarea id="question-input" rows="1" placeholder="Ask a question about your sources…" autocomplete="off"></textarea>
@@ -151,8 +204,16 @@
           <div class="setup-heading">
             <p class="eyebrow">LOCAL MODEL SETUP</p>
             <h3 id="model-setup-title">Find a model for this computer</h3>
-            <p>We check this computer’s memory and free storage on your device. Choose a model, review its size, then start the download.</p>
+            <p>We check this computer’s memory and free storage. Choose where model files should go, review the estimate, then install Ollama and multilingual research models in one step.</p>
           </div>
+          <label class="field-label" for="model-directory">Model files folder</label>
+          <div class="path-picker">
+            <input class="text-field" id="model-directory" type="text" autocomplete="off" spellcheck="false" aria-describedby="model-directory-help" />
+            <button class="button button-outlined path-picker-button" id="choose-model-directory" type="button" aria-label="Choose model files folder" title="Choose folder">
+              <img src="/static/icons/folder_open_24px.svg" alt="" /><span>Browse</span>
+            </button>
+          </div>
+          <p class="field-help" id="model-directory-help">New models will be stored in this folder; existing models are not moved. If Ollama is already running, quit it and refresh this check before changing its folder.</p>
           <div class="system-summary" id="system-summary" role="status" aria-live="polite">Checking this computer…</div>
           <button class="button button-text setup-refresh" id="refresh-system" type="button">Refresh system check</button>
           <div class="setup-warning" id="setup-warning" role="status" aria-live="polite" hidden></div>
@@ -164,25 +225,64 @@
             <img src="/static/icons/download_24px.svg" alt="" />
             <span>Download and set up</span>
           </button>
+          <p class="setup-action-hint" id="setup-action-hint" aria-live="polite">Review the estimate above to continue.</p>
           <div class="setup-progress" id="setup-progress" hidden role="status" aria-live="polite">
             <div class="setup-progress-heading"><span id="setup-progress-label">Preparing local models…</span><strong id="setup-progress-percent">0%</strong></div>
             <progress id="setup-progress-bar" max="100" value="0">0%</progress>
             <p id="setup-progress-detail"></p>
           </div>
+          <section class="installed-models" aria-labelledby="installed-models-title">
+            <div class="installed-models-heading"><h4 id="installed-models-title">Downloaded models</h4><span id="installed-model-count">Checking…</span></div>
+            <div class="installed-model-list" id="installed-model-list" role="list" aria-live="polite"><p class="model-list-empty">Checking Ollama…</p></div>
+            <p class="field-help">Remove models you no longer need to free storage. Adding or removing a model does not remove your documents.</p>
+          </section>
           <div class="ollama-help" id="ollama-help" hidden>
             <p id="ollama-help-copy">Install Ollama from its official download page, open it once, then refresh this check.</p>
             <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Get Ollama <span aria-hidden="true">↗</span></a>
           </div>
-          <p class="setup-footnote">LightWeightRAG uses a cross-platform setup helper and Ollama’s local model service. Model files and the app stay on this computer. Your document library uses additional space as you add files.</p>
+          <p class="setup-footnote">Ollama and model files are installed for your account and stay on this computer. Setup does not change system-wide packages. Your document library uses additional space as you add files.</p>
         </section>
         <label class="field-label" for="ollama-url">Ollama address</label><input class="text-field" id="ollama-url" type="url" value="http://localhost:11434" autocomplete="url" />
         <p class="field-help">Usually <code>http://localhost:11434</code>. Documents and prompts are sent to this address.</p>
-        <label class="field-label" for="chat-model">Answer model</label><input class="text-field" id="chat-model" type="text" value="qwen2.5:7b" autocomplete="off" />
-        <p class="field-help">A local chat model that writes answers from retrieved passages.</p>
-        <label class="field-label" for="embedding-model">Embedding model</label><input class="text-field" id="embedding-model" type="text" value="nomic-embed-text" autocomplete="off" />
-        <p class="field-help">Changing this model requires re-indexing your library.</p>
+        <label class="field-label" for="chat-model">Answer model</label><input class="text-field" id="chat-model" type="text" value="qwen3:4b" autocomplete="off" />
+        <p class="field-help">The recommended Qwen3 models support multilingual questions and answers. Answers use the language of your question by default.</p>
+        <label class="field-label" for="embedding-model">Embedding model</label><input class="text-field" id="embedding-model" type="text" value="nomic-embed-text-v2-moe" autocomplete="off" />
+        <p class="field-help">Multilingual search model. Changing it requires re-indexing your library.</p>
       </div>
       <div class="dialog-actions"><button class="button button-text" id="cancel-settings" type="button">Cancel</button><button class="button button-filled" id="save-settings" type="button">Save settings</button></div>
+    </dialog>
+    <dialog class="confirm-dialog" id="delete-model-dialog" aria-labelledby="delete-model-title">
+      <div class="confirm-dialog-body">
+        <p class="eyebrow">MODEL STORAGE</p>
+        <h2 id="delete-model-title">Remove downloaded model?</h2>
+        <p id="delete-model-copy">This frees model storage on this computer.</p>
+        <strong id="delete-model-name"></strong>
+        <div class="confirm-dialog-actions">
+          <button class="button button-text" id="cancel-delete-model" type="button">Keep model</button>
+          <button class="button button-danger" id="confirm-delete-model" type="button"><img src="/static/icons/delete_24px.svg" alt="" />Remove model</button>
+        </div>
+      </div>
+    </dialog>
+    <dialog class="confirm-dialog project-dialog" id="create-project-dialog" aria-labelledby="create-project-title">
+      <form class="confirm-dialog-body" id="create-project-form">
+        <p class="eyebrow">NEW PROJECT</p>
+        <h2 id="create-project-title">Create a research project</h2>
+        <p>Each project is one research topic with its own files and instructions. Choose other projects whose documents should also be available when you ask questions here.</p>
+        <label class="field-label" for="project-name">Project name</label>
+        <input class="text-field" id="project-name" type="text" maxlength="80" autocomplete="off" placeholder="For example, Climate adaptation" required />
+        <label class="field-label" for="new-project-instructions">Project instructions <span class="optional-label">Optional</span></label>
+        <textarea class="text-field" id="new-project-instructions" rows="3" maxlength="5000" placeholder="Give the research assistant a focus or response preference."></textarea>
+        <fieldset class="project-inclusion-fieldset">
+          <legend>Use documents from other projects <span class="optional-label">Optional</span></legend>
+          <p>Selected projects stay separate. Their documents become additional sources for answers in this project.</p>
+          <div class="project-inclusions" id="project-inclusions" aria-label="Projects to include as research sources"></div>
+        </fieldset>
+        <p class="project-form-error" id="project-form-error" role="alert" hidden></p>
+        <div class="confirm-dialog-actions">
+          <button class="button button-text" id="cancel-create-project" type="button">Cancel</button>
+          <button class="button button-filled" id="save-project" type="submit">Create project</button>
+        </div>
+      </form>
     </dialog>
     <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
   </body>

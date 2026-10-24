@@ -5,3 +5,4 @@ pypdf>=5,<7
 python-docx>=1.1,<2
 requests>=2.31,<3
 numpy>=1.26,<3
+zstandard>=0.23,<1

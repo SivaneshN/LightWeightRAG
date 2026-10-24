@@ -6,7 +6,7 @@ hardware and storage checks and can also be started from a terminal when needed.
 
 from __future__ import annotations
 
-from lightweightrag.model_setup import DEFAULT_OLLAMA_URL, get_system_profile, pull_model_pair
+from lightweightrag.model_setup import DEFAULT_OLLAMA_URL, EMBEDDING_MODEL, get_system_profile, pull_model_pair
 
 
 def format_size(value: int | None) -> str:
@@ -71,7 +71,7 @@ def main() -> int:
             print("Your RAM supports the recommended model; freeing disk space is preferable to upgrading RAM.")
         return 1
 
-    print("\nThe app will download the answer model and the nomic-embed-text search model to Ollama on this computer.")
+    print(f"\nThe app will download the multilingual answer model and {EMBEDDING_MODEL} search model to Ollama on this computer.")
     if input("Continue? [y/N] ").strip().casefold() not in {"y", "yes"}:
         print("\nNo files were downloaded.")
         return 0
@@ -95,7 +95,7 @@ def main() -> int:
         print(f"\nSetup did not finish: {exc}")
         return 1
     print("\nSetup complete. Open Model settings in LightWeightRAG and select these models if needed.")
-    print(f"Answer model: {chat_model}\nSearch model: nomic-embed-text")
+    print(f"Answer model: {chat_model}\nSearch model: {EMBEDDING_MODEL}")
     return 0
 
 
