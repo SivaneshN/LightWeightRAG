@@ -2,6 +2,18 @@ name: Build desktop installers (unsigned preview)
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Build one platform, or all platforms
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - windows-x64
+          - linux-ubuntu-x64
+          - macos-arm64
+          - macos-x64
   push:
     tags:
       - "v*"
@@ -13,6 +25,7 @@ jobs:
   build:
     name: Build ${{ matrix.artifact }}
     runs-on: ${{ matrix.os }}
+    if: github.event_name != 'workflow_dispatch' || inputs.platform == 'all' || inputs.platform == matrix.artifact
     strategy:
       fail-fast: false
       matrix:
@@ -82,9 +95,29 @@ jobs:
           $installer = Get-ChildItem "desktop/src-tauri/target/release/bundle/nsis/*.exe" | Select-Object -First 1
           if (-not $installer) { throw "The Windows installer was not created." }
           $installDir = Join-Path $env:RUNNER_TEMP "lwrag-smoke-install"
-          Start-Process -FilePath $installer.FullName -ArgumentList @("/S", "/D=$installDir") -Wait
-          $appPath = Join-Path $installDir "LightWeightRAG.exe"
-          if (-not (Test-Path $appPath)) { throw "The installed desktop app was not found." }
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @("/S", "/D=$installDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "The Windows installer exited with code $($install.ExitCode)." }
+          $searchRoots = @(
+            $installDir,
+            (Join-Path $env:LOCALAPPDATA "LightWeightRAG"),
+            (Join-Path $env:LOCALAPPDATA "Programs/LightWeightRAG"),
+            (Join-Path $env:ProgramFiles "LightWeightRAG"),
+            (Join-Path ([Environment]::GetEnvironmentVariable("ProgramFiles(x86)")) "LightWeightRAG")
+          ) | Select-Object -Unique
+          $appCandidates = foreach ($root in $searchRoots) {
+            if (Test-Path $root) {
+              Get-ChildItem -Path $root -Filter "*.exe" -File -Recurse -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -notmatch "uninstall" }
+            }
+          }
+          $appBinary = $appCandidates | Select-Object -First 1
+          if (-not $appBinary) {
+            $contents = Get-ChildItem -Path $installDir -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+            Write-Host "Installer exit code: $($install.ExitCode)"
+            Write-Host "Installation directory contents: $($contents -join '; ')"
+            throw "The installed desktop app was not found under $installDir."
+          }
+          $appPath = $appBinary.FullName
 
           $app = Start-Process -FilePath $appPath -PassThru
           $ready = $false
@@ -108,7 +141,7 @@ jobs:
           }
 
       - name: Save Windows and Linux installers
-        if: matrix.bundle != 'app'
+        if: always() && matrix.bundle != 'app'
         uses: actions/upload-artifact@v7
         with:
           name: LightWeightRAG-${{ matrix.artifact }}
