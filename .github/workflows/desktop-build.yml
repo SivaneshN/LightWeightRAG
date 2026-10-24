@@ -60,15 +60,15 @@ jobs:
         run: python packaging/build_backend.py
 
       - name: Install Tauri build command
-        run: cargo install tauri-cli --locked --version "^2.0.0"
+        run: npm install --global "@tauri-apps/cli@^2"
 
       - name: Generate platform app icons
         working-directory: desktop/src-tauri
-        run: cargo tauri icon ../../desktop-ui/app-icon.png --output icons
+        run: tauri icon ../../desktop-ui/app-icon.png --output icons
 
       - name: Build installer bundles
         working-directory: desktop/src-tauri
-        run: cargo tauri build --bundles "${{ matrix.bundle }}" --no-sign --ci
+        run: tauri build --bundles "${{ matrix.bundle }}" --no-sign --ci
 
       - name: Create macOS drag-and-drop disk image
         if: matrix.bundle == 'app'
